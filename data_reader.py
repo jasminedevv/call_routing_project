@@ -1,8 +1,9 @@
 def routes_gen(num):
+  """Takes the carrier list file and returns a list of tuples: (prefix, cost)"""
   with open(f'data/route-costs-{num}.txt') as routes:
     for route in routes:
         prefix, cost = route[:-1].split(',')
-        yield (prefix, float(cost))
+        yield (prefix, float(cost)) # returns a bunch of values without loading the whole thing into memory
 
 def numbers_gen(num):
   with open(f'data/phone-numbers-{num}.txt') as numbers:
