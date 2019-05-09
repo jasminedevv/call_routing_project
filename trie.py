@@ -1,17 +1,12 @@
-from typing import Dict, Optional, Any
+from typing import Dict, Optional, Any, Tuple, Iterable
 
 class TrieNode:
   children: Dict[str, 'TrieNode']
+  value: Any
 
   def __init__(self, value: Optional[str] = None) -> None:
     self.children = {}
     self.value = value
-
-  def is_empty(self) -> bool:
-    return len(self.children) == 0
-
-  def has_child(self, character: str) -> bool:
-    return character in self.children
 
   def __str__(self, depth=0):
     ret = str(self.value)
@@ -24,31 +19,32 @@ class TrieNode:
 class Trie:
   root: Optional[TrieNode] = None
 
-  def is_empty(self) -> bool:
-    return self.root is None
+  def __init__(self, items: Optional[Iterable[Tuple[str, Any]]] = None):
+    self.root = TrieNode()
 
-  def get_closest(self, string: str) -> Any:
+    if items is not None:
+      for key, value in items:
+        self.insert(key, value)
+
+  def find_closest(self, key: str) -> Any:
     node = self.root
     current_closest = None
 
-    for character in string:
-      if node.value is not None:
-        current_closest = node.value
-
+    for character in key:
       if character not in node.children:
         return current_closest
 
       node = node.children[character]
 
+      if node.value is not None:
+        current_closest = node.value
+
     return current_closest
 
-  def insert(self, string: str, value: Any) -> None:
-    if self.is_empty():
-      self.root = TrieNode()
-
+  def insert(self, key: str, value: Any) -> None:
     node = self.root
 
-    for character in string:
+    for character in key:
       if character not in node.children:
         node.children[character] = TrieNode()
 
@@ -62,4 +58,5 @@ if __name__ == "__main__":
   trie.insert('152', 1)
   trie.insert('1526', 2)
   trie.insert('1527', 3)
-  print(trie.get_closest('15267'))
+
+  print(trie.find_closest('15267'))
