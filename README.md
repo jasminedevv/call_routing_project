@@ -8,3 +8,12 @@ Load the carrier list into a dictionary. For a number we want to find, search th
 
 # Scenario 3
 Search for the prefix in a radix trie and look up the end value in the carrier dictionary.
+
+## Generate a Pickled Trie
+
+You'll likely need 16GB of RAM
+
+1. Download [route-costs-10000000.txt](https://www.dropbox.com/sh/tj6ppp6uwf12cce/AADje96PJhfsIXJEtP1OjwjFa?preview=route-costs-10000000.txt) into a folder called "data"
+2. Run `python pick_trie.py 10000000`
+
+Your pickled Trie should be available at 10000000.trie
