@@ -8,23 +8,36 @@ class CompactTrie(Trie):
     cur_value = None
 
     while node is not None:
+      # Node with key exists -> return value
+      if key in node.children:
+        return node.children[key]
+
       for prefix in node.children:
+        # Skip non-prefixes
+        if len(prefix) > len(key):
+          continue
+
         # Find the first unmatching index
         split_index = find_unshared(key, prefix)
 
         # No match -> continue searching
         if split_index == 0:
           continue
-        # Any match -> Get value of prefix and search its children
-        else:
+        # Equivalent to key.startswith(prefix) -> continue searching within this prefix
+        elif split_index == len(prefix):
           node = node.children[prefix]
-          cur_value = node.value
+          if node.value is not None:
+            cur_value = node.value
 
           # Strip key of match
           key = key[split_index:]
           break
+        # No matches found -> return last match
+        else:
+          return cur_value
+      # Exhausted all nodes -> return last match
       else:
-        node = None
+        return cur_value
 
     return cur_value
 
@@ -38,6 +51,10 @@ class CompactTrie(Trie):
         return
 
       for prefix in node.children:
+        # Skip non-prefixes
+        if len(prefix) > len(key):
+          continue
+
         # Find the first unmatching index
         split_index = find_unshared(key, prefix)
 
