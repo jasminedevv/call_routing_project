@@ -1,6 +1,8 @@
+from typing import Tuple
+
 from data_reader import routes_gen, numbers_gen
 
-def main(number):
+def main(number: str) -> Tuple[str, float]:
   routes = list(routes_gen('35000'))
   routes.sort(key=lambda r: len(r[0]), reverse=True)
 
@@ -12,5 +14,6 @@ def main(number):
 
 if __name__ == '__main__':
   number = next(numbers_gen('10'))
-  result = map(str, main(number))
-  print(', '.join(result))
+  result = main(number)
+
+  print(*result, sep=', ')
