@@ -32,10 +32,10 @@ class CompactTrie(Trie):
           # Strip key of match
           key = key[split_index:]
           break
-        # No matches found -> return last match
+        # Partial match -> return last match
         else:
           return cur_value
-      # Exhausted all nodes -> return last match
+      # No full or partial matches -> return last match
       else:
         return cur_value
 
