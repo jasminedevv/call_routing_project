@@ -1,52 +1,28 @@
 from typing import Dict, Optional, Any, Tuple, Iterable
 
 class TrieNode:
-  children: Dict[str, 'TrieNode']
-  value: Any
+  __slots__ = ('children', 'value')
 
   def __init__(self, value: Optional[str] = None) -> None:
-    self.children = {}
-    self.value = value
+    self.children: Dict[str, 'TrieNode'] = {}
+    self.value: Any = value
 
-  def __str__(self, depth=0):
-    ret = str(self.value)
+  def __str__(self, depth=0) -> str:
+    ret: str = str(self.value)
 
-    for child in self.children:
-      ret += '\n' + ' ' * depth + f'{child}: {self.children[child].__str__(depth + 1)}'
+    for child in self.children.values():
+      ret += '\n' + ' ' * depth + f'{child}: {child.__str__(depth + 1)}'
 
     return ret
 
-  def dump(self) -> dict:
-    obj = {}
+  def __getstate__(self):
+    return self.value, self.children
 
-    if self.value is not None:
-      obj['v'] = self.value
-
-    if len(self.children) != 0:
-      children = {}
-
-      for key, value in self.children.items():
-        children[key] = value.dump()
-
-      obj['c'] = children
-
-    return obj
-
-  @staticmethod
-  def load(obj: dict) -> 'TrieNode':
-    node = TrieNode()
-
-    if 'v' in obj:
-      node.value = obj['v']
-
-    if 'c' in obj:
-      for key, value in obj['c'].items():
-        node.children[key] = TrieNode.load(value)
-
-    return node
+  def __setstate__(self, state):
+    self.value, self.children = state
 
 class Trie:
-  root: Optional[TrieNode] = None
+  __slots__ = ('root')
 
   def __init__(self, items: Optional[Iterable[Tuple[str, Any]]] = None):
     self.root = TrieNode()
@@ -81,15 +57,11 @@ class Trie:
 
     node.value = value
 
-  def dump(self) -> dict:
-    return self.root.dump()
+  def __getstate__(self):
+    return self.root
 
-  @staticmethod
-  def load(obj) -> 'Trie':
-    trie = Trie()
-    trie.root = TrieNode.load(obj)
-
-    return trie
+  def __setstate__(self, state):
+    self.root = state
 
 
 if __name__ == "__main__":
@@ -99,4 +71,4 @@ if __name__ == "__main__":
   trie.insert('1526', 2)
   trie.insert('1527', 3)
 
-  print(trie.find_closest('15267'))
+  assert trie.find_closest('15267') == 2

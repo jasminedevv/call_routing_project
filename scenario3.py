@@ -1,15 +1,19 @@
-from trie import Trie
-from data_reader import routes_gen, numbers_gen
-import pickle
+from memory_profiler import memory_usage
+# from memory_profiler import profile
 
+from trie_serializer import load
+from data_reader import numbers_gen
+
+# @profile
 def main():
-  # print('Growing Trie')
-  # trie = Trie(routes_gen('1000000'))
-  # print('Trie grown')
-  trie = pickle.load(open('10000000.trie', 'rb'))
+  trie = load('10000000')
 
-  for number in numbers_gen('100'):
-    print(number, trie.find_closest(number), sep=', ')
+  with open('out.txt', 'w') as f:
+    for number in numbers_gen('1000'):
+      f.write(number)
+      f.write(', ')
+      f.write(str(trie.find_closest(number)))
+      f.write('\n')
 
 if __name__ == '__main__':
-  main()
+  print(max(memory_usage(proc=main)))
