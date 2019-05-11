@@ -1,5 +1,4 @@
 import pickle
-from sys import argv
 
 from compact_trie import CompactTrie
 from data_reader import routes_gen
@@ -32,6 +31,8 @@ def _grow_trie(number):
   return trie
 
 def main():
+  from sys import argv
+
   _, action, number, *_ = argv
 
   if action == 'dump':
