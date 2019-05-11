@@ -16,6 +16,35 @@ class TrieNode:
 
     return ret
 
+  def dump(self) -> dict:
+    obj = {}
+
+    if self.value is not None:
+      obj['v'] = self.value
+
+    if len(self.children) != 0:
+      children = {}
+
+      for key, value in self.children.items():
+        children[key] = value.dump()
+
+      obj['c'] = children
+
+    return obj
+
+  @staticmethod
+  def load(obj: dict) -> 'TrieNode':
+    node = TrieNode()
+
+    if 'v' in obj:
+      node.value = obj['v']
+
+    if 'c' in obj:
+      for key, value in obj['c'].items():
+        node.children[key] = TrieNode.load(value)
+
+    return node
+
 class Trie:
   root: Optional[TrieNode] = None
 
@@ -51,6 +80,17 @@ class Trie:
       node = node.children[character]
 
     node.value = value
+
+  def dump(self) -> dict:
+    return self.root.dump()
+
+  @staticmethod
+  def load(obj) -> 'Trie':
+    trie = Trie()
+    trie.root = TrieNode.load(obj)
+
+    return trie
+
 
 if __name__ == "__main__":
   trie = Trie()
