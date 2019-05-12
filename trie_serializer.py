@@ -1,9 +1,10 @@
 import pickle
 
-from compact_trie import CompactTrie
+# from compact_trie import CompactTrie as Trie
+from trie import Trie
 from data_reader import routes_gen
 
-def dump(trie: CompactTrie, name: str) -> None:
+def dump(trie: Trie, name: str) -> None:
   print('Dumping Trie...')
 
   with open(f'{name}.pkl', 'wb') as f:
@@ -11,11 +12,11 @@ def dump(trie: CompactTrie, name: str) -> None:
 
   print('Trie dumped!')
 
-def load(name: str) -> CompactTrie:
+def load(name: str) -> Trie:
   print('Loading Trie...')
 
   with open(f'{name}.pkl', 'rb') as f:
-    trie: CompactTrie = pickle.load(f)
+    trie: Trie = pickle.load(f)
 
   print('Trie loaded!')
 
@@ -24,7 +25,7 @@ def load(name: str) -> CompactTrie:
 def _grow_trie(number):
   print('Growing Trie...')
 
-  trie = CompactTrie(routes_gen(number))
+  trie = Trie(routes_gen(number))
 
   print('Trie grown!')
 
