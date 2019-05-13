@@ -7,13 +7,13 @@ def main(number: str) -> Tuple[str, float]:
   routes.sort(key=lambda r: len(r[0]), reverse=True)
 
   for route in routes:
-    if number.startswith(route[0]):
+    if number.startswith(route[0].decode()):
       return (number, route[1])
 
   return (number, 0)
 
 if __name__ == '__main__':
   number = next(numbers_gen('10'))
-  result = main(number)
+  result = main(number.decode())
 
   print(*result, sep=', ')

@@ -1,127 +1,137 @@
-from typing import Dict, Optional, Any, Tuple, Iterable
-from trie import Trie, TrieNode
+from typing import Dict, Optional, Any, Tuple, Iterable, Sequence
 
-def find_uncommon_index(s1: str, s2: str) -> int:
-  i = 0
-  bounds = min(len(s1), len(s2))
+from utils import PickleMixin
 
-  while i < bounds:
-    if s1[i] != s2[i]:
-      break
+def _find_uncommon_index(s1: Sequence, s2: Sequence) -> int:
+  i = -1
 
-    i += 1
+  for i, (c1, c2) in enumerate(zip(s1, s2)):
+    if c1 != c2:
+      return i
 
-  return i
+  return i + 1
 
-# TODO: Make find_closest and insert reuse more code
-class CompactTrie(Trie):
-  def find_closest(self, key: str) -> Any:
-    node = self.root
-    cur_value = None
+Key = Optional[Sequence]
+Value = Any
+Key_Value = Tuple[Key, Value]
 
-    while node is not None:
-      # Node with key exists
-      if key in node.children:
-        # Return value of child
-        return node.children[key].value
+class CompactTrie(PickleMixin):
+  __slots__ = '_value', '_subtries'
 
+  def __init__(self, value: Value = None, items: Optional[Iterable[Key_Value]] = None):
+    self._value = value
+    self._subtries: Optional[Dict[Sequence, 'CompactTrie']] = None
+
+    if items is not None:
+      for key, value in items:
+        self[key] = value
+
+  def __setitem__(self, key: Key, value: Value) -> None:
+    # Falsy keys (empty sequences or None)
+    if not key:
+      self._value = value
+      return
+
+    # Trie has no subries
+    if self._subtries is None:
+      # Create dictionary with new subtrie at key
+      self._subtries = { key: CompactTrie(value) }
+      return
+    # Trie has existing subrie
+    elif key in self._subtries:
+      # Set existing subtree at key
+      self._subtries[key][None] = value
+      return
+    # Search for prefixes
+    else:
       len_key = len(key)
 
-      for prefix in node.children:
+      for prefix in self._subtries:
         len_prefix = len(prefix)
 
-        # Non-prefixes
-        if len_prefix > len_key or key[0] != prefix[0]:
+        # [0, min(len(key), len(prefix))]
+        uncommon_index = _find_uncommon_index(key, prefix)
+
+        # Not a prefix
+        if uncommon_index == 0:
           continue
+        # Prefix fully prefixes key
+        elif uncommon_index == len_prefix:
+          # Recursively set value in subtrie with rest of key
+          self._subtries[prefix][key[len_prefix:]] = value
+          return
+        # Key fully prefixes prefix
+        elif uncommon_index == len_key:
+          new_trie = CompactTrie(value)
 
-        uncommon_index = find_uncommon_index(key, prefix)
+          new_trie._subtries = {
+            # Move old trie
+            prefix[uncommon_index:]: self._subtries.pop(prefix)
+          }
 
-        # Equivalent to key.startswith(prefix)
-        if uncommon_index == len_prefix:
-          # Search child node for matches
-          node = node.children[prefix]
-
-          # Store value for returning later
-          if node.value is not None:
-            cur_value = node.value
-
-          # Strip key of match
-          key = key[uncommon_index:]
-
-          # Stop searching old prefixes
-          break
-        # Partial match
-        else:
-          # Return last match
-          return cur_value
-      # No potential prefixes found
-      else:
-        # Return last match
-        return cur_value
-
-    return cur_value
-
-  def insert(self, key: str, value: Any) -> None:
-    node = self.root
-
-    while key:
-      # Node with key already exists, set value
-      if key in node.children:
-        node.children[key].value = value
-        return
-
-      len_key = len(key)
-
-      for prefix in node.children:
-        len_prefix = len(prefix)
-
-        # Non-prefixes
-        if len_prefix > len_key or key[0] != prefix[0]:
-          continue
-
-        uncommon_index = find_uncommon_index(key, prefix)
-
-        # Equivalent to key.startswith(prefix)
-        if uncommon_index == len_prefix:
-          # Search child node for matches
-          node = node.children[prefix]
-
-          # Strip key of match
-          key = key[len_prefix:]
-
-          # Stop searching old prefixes
-          break
-        # Partial match
+          # Add a new trie as a subtrie with the old trie as a subtrie of it
+          self._subtries[key] = new_trie
+          return
+        # Key and prefix partially prefix each other
         else:
           # Create new node to split previous values and new
-          new_parent = TrieNode()
+          new_parent = CompactTrie()
 
-          # Split off new key and prefix for prev values
-          split_prefix, split_key = prefix[:uncommon_index], prefix[uncommon_index:]
+          new_prefix = prefix[:uncommon_index]
 
-          # Move prev node to its new key on parent
-          new_parent.children[split_key] = node.children.pop(prefix)
-          # Create new node with value with substring of non-matching key
-          new_parent.children[key[uncommon_index:]] = TrieNode(value)
+          rest_old_key = prefix[uncommon_index:]
+          rest_new_key = key[uncommon_index:]
+
+          new_parent._subtries = {
+            # Move old subtrie
+            rest_old_key: self._subtries.pop(prefix),
+            rest_new_key: CompactTrie(value)
+          }
 
           # Add parent keyed with matching string
-          node.children[split_prefix] = new_parent
-
-          # Node inserted, exit
+          self._subtries[new_prefix] = new_parent
           return
-      # No potential prefixes found
+      # No matches
       else:
-        # Create new node with value with key
-        node.children[key] = TrieNode(value)
-
-        # Node inserted, exit
+        # Create new subtrie
+        self._subtries[key] = CompactTrie(value)
         return
 
-if __name__ == "__main__":
+  def find_closest(self, key: Key, current: Value = None) -> Value:
+    current = self._value if self._value is not None else current
+
+    if not key:
+      return current
+
+    if self._subtries is None:
+      return current
+    elif key in self._subtries:
+      return self._subtries[key].find_closest(None, current)
+    else:
+      for prefix in self._subtries:
+        len_prefix = len(prefix)
+
+        # [0, min(len(key), len(prefix))]
+        uncommon_index = _find_uncommon_index(key, prefix)
+
+        # Not a prefix
+        if uncommon_index == 0:
+          continue
+        # Prefix fully prefixes key
+        elif uncommon_index == len_prefix:
+          # Recursively get value in subtrie with rest of key
+          return self._subtries[prefix].find_closest(key[len_prefix:], current)
+        else:
+          return current
+      # No matches
+      else:
+        return current
+
+if __name__ == '__main__':
   trie = CompactTrie()
 
-  trie.insert('152', 1)
-  trie.insert('1526', 2)
-  trie.insert('1527', 3)
+  trie[b'152'] = 1
+  trie[b'1526'] = 2
+  trie[b'1527'] = 3
 
-  assert trie.find_closest('15267') == 2
+  assert trie.find_closest(b'15267') == 2

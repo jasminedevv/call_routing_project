@@ -6,12 +6,12 @@ def main():
 
   print('Writing results to out.txt...')
 
-  with open('out.txt', 'w') as f:
+  with open('out.txt', 'wb') as f:
     for number in numbers_gen('10000'):
       f.write(number)
-      f.write(', ')
-      f.write(str(trie.find_closest(number) or 0))
-      f.write('\n')
+      f.write(b', ')
+      f.write(bytes(str(trie.find_closest(number) or 0), 'utf-8'))
+      f.write(b'\n')
 
   print('Finished!')
 

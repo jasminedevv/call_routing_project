@@ -1,6 +1,6 @@
 from flask import Flask, request
 import pickle
-from trie import Trie
+from ..trie import Trie
 
 
 app = Flask(__name__)
@@ -15,7 +15,7 @@ def lookup_price(number=""):
         number = "+" + number
 
     price = TRIE.find_closest(number)
-    
+
     if price is None:
         return "Could not find a price for that number."
     return str(price)

@@ -1,6 +1,7 @@
-def find_unshared(s1: str, s2: str) -> int:
-  for i, (c1, c2) in enumerate(zip(s1, s2)):
-    if c1 != c2:
-      return i
+class PickleMixin:
+  def __getstate__(self):
+    return tuple(getattr(self, attr) for attr in self.__slots__)
 
-  return min(len(s1), len(s2))
+  def __setstate__(self, state):
+    for attr, value in zip(self.__slots__, state):
+      setattr(self, attr, value)
