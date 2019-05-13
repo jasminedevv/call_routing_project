@@ -1,70 +1,84 @@
-from typing import Optional, Any, Tuple, Iterable, Dict, List
+from typing import Optional, Any, Tuple, Iterable, Dict, List, Sequence, Hashable
 
 from utils import PickleMixin
 
-class _Node(PickleMixin):
-  __slots__ = 'children', 'value'
-
-  def __init__(self, children_cap: int, value: Optional[str] = None) -> None:
-    self.children: List[Optional['_Node']] = [None] * children_cap
-    self.value: Any = value
+Key = Iterable[Hashable]
+Value = Optional[Any]
+Mapper = Dict[Hashable, int]
 
 class Trie(PickleMixin):
-  __slots__ = 'root', 'mapper'
+  __slots__ = '_children', '_value', '_mapper'
 
-  def __init__(self, keys: bytes, items: Optional[Iterable[Tuple[bytes, Any]]] = None):
-    self.mapper: Dict[int, int] = {char: index for index, char in enumerate(keys)}
-    self.root: _Node = _Node(len(self.mapper))
+  def __init__(
+    self,
+    value: Value = None,
+    items: Optional[Iterable[Tuple[Key, Value]]] = None,
+    keys: Optional[Key] = None,
+    mapper: Optional[Mapper] = None,
+  ) -> None:
+    self._mapper: Mapper
+
+    if mapper:
+      self._mapper = mapper
+    elif keys:
+      self._mapper = {item: index for index, item in enumerate(keys)}
+    else:
+      raise ValueError('keys or mapper must be provided')
+
+    self._children: Optional[List[Optional['Trie']]] = None
+    self._value = value
 
     if items is not None:
       for key, value in items:
-        self.insert(key, value)
+        self[key] = value
 
-  def find_closest(self, key: bytes) -> Any:
-    node = self.root
-    cur_val = node.value
-    mapper = self.mapper
+  def __setitem__(self, key: Key, value: Value) -> None:
+    iter_key = iter(key)
 
-    for character in key:
-      children = node.children
-      index = mapper[character]
+    try:
+      mapper = self._mapper
+      index = mapper[next(iter_key)]
+      children = self._children
 
-      child = children[index]
-
-      if child is None:
-        break
-
-      node = child
-
-      if node.value is not None:
-        cur_val = node.value
-
-    return cur_val
-
-  def insert(self, key: bytes, value: Any) -> None:
-    node = self.root
-    mapper = self.mapper
-    len_mapper = len(mapper)
-
-    for character in key:
-      children = node.children
-      index = mapper[character]
+      if not children:
+        children = self._children = [None] * len(mapper)
 
       child = children[index]
 
-      if child is None:
-        child = children[index] = _Node(len_mapper)
+      if not child:
+        child = children[index] = Trie(mapper=self._mapper)
 
-      node = child
+      child[iter_key] = value
+    except StopIteration:
+      self._value = value
 
-    node.value = value
+  def find_closest(self, key: Key, current: Optional[Value] = None) -> Optional[Value]:
+    current = self._value or current
+    iter_key = iter(key)
+
+    try:
+      mapper = self._mapper
+      index = mapper[next(iter_key)]
+      children = self._children
+
+      if not children:
+        return current
+
+      child = children[index]
+
+      if not child:
+        return current
+
+      return child.find_closest(iter_key, current)
+    except StopIteration:
+      return current
 
 if __name__ == "__main__":
   from string import digits
-  trie = Trie(bytes(digits, 'utf-8'))
+  trie = Trie(keys=bytes(digits, 'utf-8'))
 
-  trie.insert(b'152', 1)
-  trie.insert(b'1526', 2)
-  trie.insert(b'1527', 3)
+  trie[b'152'] = 1
+  trie[b'1526'] = 2
+  trie[b'1527'] = 3
 
   assert trie.find_closest(b'15267') == 2
