@@ -1,26 +1,29 @@
-from typing import Tuple, Optional, Dict
+from typing import Dict
 
 from data_reader import routes_gen, numbers_gen
 
-def get_price(number: str) -> Tuple[str, Optional[float]]:
-    routes: Dict[str, float] = dict(routes_gen('10000000'))
-    price: Optional[float] = None
-    prefix = number
+routes: Dict[str, float] = dict((route.decode(), cost) for route, cost in routes_gen('106000'))
 
-    print("Dictionary generated!")
+def get_price(number: str) -> float:
+  while number:
+    try:
+      return routes[number]
+    except KeyError:
+      number = number[:-1]
 
-    while prefix != "+":
-        try:
-            price = routes[prefix]
-            print(price)
-            break
-        except KeyError:
-            prefix = prefix[:-1]
-            print(prefix)
+  return 0
 
-    return (number, price)
+def main():
+  print('Getting prices and writing to scenario2.out...')
+
+  with open('scenario2.out', 'w') as f:
+    for number in map(bytes.decode, numbers_gen('1000')):
+      f.write(number)
+      f.write(', ')
+      f.write(str(get_price(number)))
+      f.write('\n')
+
+  print('Done!')
 
 if __name__ == '__main__':
-    price = get_price("+443075760")
-    print(price)
-    assert price[1] == 0.59
+  main()
