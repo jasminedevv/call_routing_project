@@ -1,19 +1,21 @@
-from typing import Tuple
-
 from data_reader import routes_gen, numbers_gen
 
-def main(number: str) -> Tuple[str, float]:
-  routes = list(routes_gen('35000'))
-  routes.sort(key=lambda r: len(r[0]), reverse=True)
+# Generate the routes sorted
+routes = list(((route.decode(), cost) for route, cost in routes_gen('106000')))
+routes.sort(key=lambda r: len(r[0]), reverse=True)
 
+def get_cost(number: str) -> float:
+  """Finds the price of a number by searching for the longest corresponding route."""
   for route in routes:
-    if number.startswith(route[0].decode()):
-      return (number, route[1])
+    if number.startswith(route[0]):
+      return route[1]
 
-  return (number, 0)
+  return 0
 
 if __name__ == '__main__':
-  number = next(numbers_gen('10'))
-  result = main(number.decode())
+  from random import choice
 
-  print(*result, sep=', ')
+  number = choice(list(numbers_gen('1000'))).decode()
+  cost = get_cost(number)
+
+  print(number, cost, sep=', ')
