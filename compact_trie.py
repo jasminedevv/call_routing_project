@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Any, Tuple, Iterable, Sequence
+from typing import Dict, Optional, Any, Tuple, Iterable,Sequence, List, Hashable
 
 from utils import PickleMixin
 
@@ -11,18 +11,36 @@ def _find_uncommon_index(s1: Sequence, s2: Sequence) -> int:
 
   return i + 1
 
-Key = Optional[Sequence]
+Key = Sequence[Hashable]
 Value = Any
 Key_Value = Tuple[Key, Value]
+Mapper = Dict[Hashable, int]
 
 class CompactTrie(PickleMixin):
-  __slots__ = '_value', '_subtries'
+  __slots__ = '_key', '_value', '_buckets', '_mapper'
 
-  def __init__(self, value: Value = None, items: Optional[Iterable[Key_Value]] = None):
+  def __init__(
+    self,
+    key: Optional[Key] = None,
+    value: Optional[Value] = None,
+    keys: Optional[Key] = None,
+    mapper: Optional[Mapper] = None,
+    items: Optional[Iterable[Key_Value]] = None,
+  ):
+    self._mapper: Mapper
+
+    if mapper:
+      self._mapper = mapper
+    elif keys:
+      self._mapper = {key: index for index, key in enumerate(keys)}
+    else:
+      raise ValueError('mapper or keys must be provided')
+
+    self._key = key
     self._value = value
-    self._subtries: Optional[Dict[Sequence, 'CompactTrie']] = None
+    self._buckets: Optional[List[Optional['CompactTrie']]] = None
 
-    if items is not None:
+    if items:
       for key, value in items:
         self[key] = value
 
@@ -32,21 +50,26 @@ class CompactTrie(PickleMixin):
       self._value = value
       return
 
-    # Trie has no subries
-    if self._subtries is None:
-      # Create dictionary with new subtrie at key
-      self._subtries = { key: CompactTrie(value) }
-      return
-    # Trie has existing subrie
-    elif key in self._subtries:
-      # Set existing subtree at key
-      self._subtries[key][None] = value
-      return
-    # Search for prefixes
-    else:
-      len_key = len(key)
+    mapper = self._mapper
+    buckets = self._buckets
+    index = mapper[key[0]]
 
-      for prefix in self._subtries:
+    # Trie has no subries
+    if not self._buckets:
+      # Create bucket with new subtrie at key
+      buckets = self._buckets = [None] * len(mapper)
+      buckets[index] = CompactTrie(key, value, mapper=mapper)
+      return
+    # Check existing
+    else:
+      subtrie = buckets[index]
+
+      if subtrie:
+        if not subtrie._key:
+          raise KeyError(f'Subtrie at {index} has no key')
+
+        prefix: Key = subtrie._key
+        len_key = len(key)
         len_prefix = len(prefix)
 
         # [0, min(len(key), len(prefix))]
@@ -54,47 +77,50 @@ class CompactTrie(PickleMixin):
 
         # Not a prefix
         if uncommon_index == 0:
-          continue
+          raise KeyError(f'Subtrie with key={key} misplaced at bucket {index}')
         # Prefix fully prefixes key
         elif uncommon_index == len_prefix:
           # Recursively set value in subtrie with rest of key
-          self._subtries[prefix][key[len_prefix:]] = value
+          subtrie[key[len_prefix:]] = value
           return
         # Key fully prefixes prefix
         elif uncommon_index == len_key:
-          new_trie = CompactTrie(value)
+          parent_prefix = prefix[:uncommon_index]
+          old_prefix = prefix[uncommon_index:]
 
-          new_trie._subtries = {
-            # Move old trie
-            prefix[uncommon_index:]: self._subtries.pop(prefix)
-          }
+          old_index = mapper[old_prefix[0]]
 
-          # Add a new trie as a subtrie with the old trie as a subtrie of it
-          self._subtries[key] = new_trie
+          parent = CompactTrie(parent_prefix, value, mapper=mapper)
+          parent._buckets = [None] * len(mapper)
+          subtrie._key = old_prefix
+
+          # Move old subtrie to parent and parent where it was
+          parent._buckets[old_index], buckets[index] = subtrie, parent
           return
         # Key and prefix partially prefix each other
         else:
+          parent_prefix = prefix[:uncommon_index]
+          old_prefix = prefix[uncommon_index:]
+          new_prefix = key[uncommon_index:]
+
+          old_index = mapper[old_prefix[0]]
+          new_index = mapper[new_prefix[0]]
+
           # Create new node to split previous values and new
-          new_parent = CompactTrie()
-
-          new_prefix = prefix[:uncommon_index]
-
-          rest_old_key = prefix[uncommon_index:]
-          rest_new_key = key[uncommon_index:]
-
-          new_parent._subtries = {
-            # Move old subtrie
-            rest_old_key: self._subtries.pop(prefix),
-            rest_new_key: CompactTrie(value)
-          }
+          parent = CompactTrie(parent_prefix, mapper=mapper)
+          parent._buckets = [None] * len(mapper)
+          subtrie._key = old_prefix
 
           # Add parent keyed with matching string
-          self._subtries[new_prefix] = new_parent
+          parent._buckets[old_index] = subtrie
+          parent._buckets[new_index] = CompactTrie(new_prefix, value, mapper=mapper)
+
+          buckets[index] = parent
           return
-      # No matches
+      # No existing subtrie
       else:
         # Create new subtrie
-        self._subtries[key] = CompactTrie(value)
+        buckets[index] = CompactTrie(key, value, mapper=mapper)
         return
 
   def find_closest(self, key: Key, current: Value = None) -> Value:
@@ -103,12 +129,20 @@ class CompactTrie(PickleMixin):
     if not key:
       return current
 
-    if self._subtries is None:
+    if self._buckets is None:
       return current
-    elif key in self._subtries:
-      return self._subtries[key].find_closest(None, current)
     else:
-      for prefix in self._subtries:
+      mapper = self._mapper
+      buckets = self._buckets
+      index = mapper[key[0]]
+      subtrie = buckets[index]
+
+      if subtrie:
+        if not subtrie._key:
+          raise KeyError(f'Subtrie at {index} has no key')
+
+        prefix: Key = subtrie._key
+
         len_prefix = len(prefix)
 
         # [0, min(len(key), len(prefix))]
@@ -116,11 +150,11 @@ class CompactTrie(PickleMixin):
 
         # Not a prefix
         if uncommon_index == 0:
-          continue
+          raise KeyError(f'Subtrie with key={key} misplaced at bucket {index}')
         # Prefix fully prefixes key
         elif uncommon_index == len_prefix:
           # Recursively get value in subtrie with rest of key
-          return self._subtries[prefix].find_closest(key[len_prefix:], current)
+          return subtrie.find_closest(key[len_prefix:], current)
         else:
           return current
       # No matches
@@ -128,7 +162,10 @@ class CompactTrie(PickleMixin):
         return current
 
 if __name__ == '__main__':
-  trie = CompactTrie()
+  from string import digits
+
+  PHONE_KEYS = bytes('+' + digits, 'utf-8')
+  trie = CompactTrie(keys=PHONE_KEYS)
 
   trie[b'152'] = 1
   trie[b'1526'] = 2

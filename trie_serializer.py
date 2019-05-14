@@ -28,8 +28,7 @@ def load(name: str) -> Trie:
 def _grow_trie(number):
   print(f'Growing {number} Trie...')
 
-  # trie = Trie(PHONE_KEYS, routes_gen(number))
-  trie = Trie(items=routes_gen(number))
+  trie = Trie(keys=PHONE_KEYS, items=routes_gen(number))
 
   print(f'{number} Trie grown!')
 
