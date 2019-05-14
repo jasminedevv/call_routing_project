@@ -61,7 +61,7 @@ class Trie(PickleMixin):
       self._value = value
 
   def find_closest(self, key: Key, _current: Optional[Value] = None) -> Optional[Value]:
-    """Finds the value of the longest matching prefix of key.
+    """Finds the value of the longest matching prefix of a key.
 
     Args:
       key: The key to match the longest prefix of.

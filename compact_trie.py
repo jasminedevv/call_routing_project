@@ -151,7 +151,7 @@ class CompactTrie(PickleMixin):
         return
 
   def find_closest(self, key: Key, _current: Value = None) -> Value:
-    """Finds the value of the longest matching prefix.
+    """Finds the value of the longest matching prefix of a key.
 
     Args:
         key: The key to match the longest prefix of.
