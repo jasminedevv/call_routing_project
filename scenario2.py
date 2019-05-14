@@ -21,6 +21,6 @@ def get_price(number: str) -> Tuple[str, Optional[float]]:
     return (number, price)
 
 if __name__ == '__main__':
-    price = get_price("+33676811907")
+    price = get_price("+443075760")
     print(price)
-    assert price[1] == 0.39
+    assert price[1] == 0.59
