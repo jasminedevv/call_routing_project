@@ -21,4 +21,8 @@ Search for the prefix in a radix trie and look up the end value in the carrier d
 1. Run `python trie_serializer.py dump 10000000`
 2. Run `python scenario3.py`
 
-Results will in a file called "out.txt"
+Results will be in a file called "out.txt"
+
+# Scenario 4
+Exactly like scenario 2 except with a database. It's a lot slower than our scenario 3 solution but it was much quicker to make. It also wasn't able to handle the 10000000 file without exceeding Heroku's limits so it uses the 106000 file.
+You can try it yourself here: [call-api-jasmine-dacio-django.herokuapp.com](https://call-api-jasmine-dacio-django.herokuapp.com) and view the repo [here](https://github.com/lacunahag/call_routing_django_api)
