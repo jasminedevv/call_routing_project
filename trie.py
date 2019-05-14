@@ -1,4 +1,11 @@
-from typing import Optional, Any, Tuple, Iterable, Dict, List, Sequence, Hashable
+from typing import (Optional,
+  Any,
+  Tuple,
+  Iterable,
+  Dict,
+  List,
+  Hashable,
+)
 
 from utils import PickleMixin
 
@@ -7,71 +14,81 @@ Value = Optional[Any]
 Mapper = Dict[Hashable, int]
 
 class Trie(PickleMixin):
-  __slots__ = '_children', '_value', '_mapper'
+  __slots__ = '_subtries', '_value', '_mapper'
 
   def __init__(
     self,
-    value: Value = None,
-    items: Optional[Iterable[Tuple[Key, Value]]] = None,
     keys: Optional[Key] = None,
-    mapper: Optional[Mapper] = None,
+    items: Optional[Iterable[Tuple[Key, Value]]] = None,
+    _value: Value = None,
+    _mapper: Optional[Mapper] = None,
   ) -> None:
     self._mapper: Mapper
 
-    if mapper:
-      self._mapper = mapper
+    if _mapper:
+      self._mapper = _mapper
     elif keys:
       self._mapper = {item: index for index, item in enumerate(keys)}
     else:
-      raise ValueError('keys or mapper must be provided')
+      raise ValueError('keys or _mapper must be provided')
 
-    self._children: Optional[List[Optional['Trie']]] = None
-    self._value = value
+    self._subtries: Optional[List[Optional['Trie']]] = None
+    self._value = _value
 
     if items is not None:
-      for key, value in items:
-        self[key] = value
+      for key, _value in items:
+        self[key] = _value
 
   def __setitem__(self, key: Key, value: Value) -> None:
+    """Recursively sets the value of a key within the trie."""
     iter_key = iter(key)
 
     try:
       mapper = self._mapper
       index = mapper[next(iter_key)]
-      children = self._children
+      subtries = self._subtries
 
-      if not children:
-        children = self._children = [None] * len(mapper)
+      if not subtries:
+        subtries = self._subtries = [None] * len(mapper)
 
-      child = children[index]
+      child = subtries[index]
 
       if not child:
-        child = children[index] = Trie(mapper=self._mapper)
+        child = subtries[index] = Trie(_mapper=self._mapper)
 
       child[iter_key] = value
     except StopIteration:
       self._value = value
 
-  def find_closest(self, key: Key, current: Optional[Value] = None) -> Optional[Value]:
-    current = self._value or current
+  def find_closest(self, key: Key, _current: Optional[Value] = None) -> Optional[Value]:
+    """Finds the value of the longest matching prefix of key.
+
+    Args:
+      key: The key to match the longest prefix of.
+      _current: The longest value in the parent. Defaults to None.
+
+    Returns:
+        The value of the longest match in this subtrie or its subtries.
+    """
+    _current = self._value or _current
     iter_key = iter(key)
 
     try:
       mapper = self._mapper
       index = mapper[next(iter_key)]
-      children = self._children
+      subtries = self._subtries
 
-      if not children:
-        return current
+      if not subtries:
+        return _current
 
-      child = children[index]
+      child = subtries[index]
 
       if not child:
-        return current
+        return _current
 
-      return child.find_closest(iter_key, current)
+      return child.find_closest(iter_key, _current)
     except StopIteration:
-      return current
+      return _current
 
 if __name__ == "__main__":
   from string import digits
