@@ -1,8 +1,18 @@
-from typing import Dict, Optional, Any, Tuple, Iterable,Sequence, List, Hashable
+from typing import (
+  Sequence,
+  Hashable,
+  Any,
+  Dict,
+  Optional,
+  Iterable,
+  Tuple,
+  List,
+)
 
 from utils import PickleMixin
 
 def _find_uncommon_index(s1: Sequence, s2: Sequence) -> int:
+  """Finds the index of the first uncommon value between two sequences."""
   i = -1
 
   for i, (c1, c2) in enumerate(zip(s1, s2)):
@@ -13,7 +23,6 @@ def _find_uncommon_index(s1: Sequence, s2: Sequence) -> int:
 
 Key = Sequence[Hashable]
 Value = Any
-Key_Value = Tuple[Key, Value]
 Mapper = Dict[Hashable, int]
 
 class CompactTrie(PickleMixin):
@@ -21,23 +30,35 @@ class CompactTrie(PickleMixin):
 
   def __init__(
     self,
-    key: Optional[Key] = None,
-    value: Optional[Value] = None,
     keys: Optional[Key] = None,
-    mapper: Optional[Mapper] = None,
-    items: Optional[Iterable[Key_Value]] = None,
-  ):
+    items: Optional[Iterable[Tuple[Key, Value]]] = None,
+    _mapper: Optional[Mapper] = None,
+    _key: Optional[Key] = None,
+    _value: Optional[Value] = None,
+  ) -> None:
+    """Initializes the Trie
+
+    Args:
+        keys: All potential items in keys that are added. Defaults to None.
+        items: Key value pairs to automatically add. Defaults to None.
+        _mapper: A premade mapper passed down from the parent. Defaults to None.
+        _key: The key of in relation to its parent. Defaults to None.
+        _value: The value in relation to its parent. Defaults to None.
+
+    Raises:
+        ValueError: Neither keys nor _mapper were provided.
+    """
     self._mapper: Mapper
 
-    if mapper:
-      self._mapper = mapper
+    if _mapper:
+      self._mapper = _mapper
     elif keys:
       self._mapper = {key: index for index, key in enumerate(keys)}
     else:
       raise ValueError('mapper or keys must be provided')
 
-    self._key = key
-    self._value = value
+    self._key = _key
+    self._value = _value
     self._buckets: Optional[List[Optional['CompactTrie']]] = None
 
     if items:
@@ -45,6 +66,11 @@ class CompactTrie(PickleMixin):
         self[key] = value
 
   def __setitem__(self, key: Key, value: Value) -> None:
+    """Recursively sets the value of a key within the trie.
+
+    Raises:
+        KeyError: A subtrie is misplaced or has no key, this is a bug.
+    """
     # Falsy keys (empty sequences or None)
     if not key:
       self._value = value
@@ -54,21 +80,22 @@ class CompactTrie(PickleMixin):
     buckets = self._buckets
     index = mapper[key[0]]
 
-    # Trie has no subries
+    # Trie has no subtries
     if not self._buckets:
       # Create bucket with new subtrie at key
       buckets = self._buckets = [None] * len(mapper)
-      buckets[index] = CompactTrie(key, value, mapper=mapper)
+      buckets[index] = CompactTrie(_key=key, _value=value, _mapper=mapper)
       return
     # Check existing
     else:
       subtrie = buckets[index]
 
       if subtrie:
-        if not subtrie._key:
+        prefix: Optional[Key] = subtrie._key
+
+        if not prefix:
           raise KeyError(f'Subtrie at {index} has no key')
 
-        prefix: Key = subtrie._key
         len_key = len(key)
         len_prefix = len(prefix)
 
@@ -90,7 +117,7 @@ class CompactTrie(PickleMixin):
 
           old_index = mapper[old_prefix[0]]
 
-          parent = CompactTrie(parent_prefix, value, mapper=mapper)
+          parent = CompactTrie(_key=parent_prefix, _value=value, _mapper=mapper)
           parent._buckets = [None] * len(mapper)
           subtrie._key = old_prefix
 
@@ -107,30 +134,42 @@ class CompactTrie(PickleMixin):
           new_index = mapper[new_prefix[0]]
 
           # Create new node to split previous values and new
-          parent = CompactTrie(parent_prefix, mapper=mapper)
+          parent = CompactTrie(_key=parent_prefix, _mapper=mapper)
           parent._buckets = [None] * len(mapper)
           subtrie._key = old_prefix
 
           # Add parent keyed with matching string
           parent._buckets[old_index] = subtrie
-          parent._buckets[new_index] = CompactTrie(new_prefix, value, mapper=mapper)
+          parent._buckets[new_index] = CompactTrie(_key=new_prefix, _value=value, _mapper=mapper)
 
           buckets[index] = parent
           return
       # No existing subtrie
       else:
         # Create new subtrie
-        buckets[index] = CompactTrie(key, value, mapper=mapper)
+        buckets[index] = CompactTrie(_key=key, _value=value, _mapper=mapper)
         return
 
-  def find_closest(self, key: Key, current: Value = None) -> Value:
-    current = self._value if self._value is not None else current
+  def find_closest(self, key: Key, _current: Value = None) -> Value:
+    """Finds the value of the longest matching prefix.
+
+    Args:
+        key: The key to match the longest prefix of.
+        _current: The longest value in the parent. Defaults to None.
+
+    Raises:
+        KeyError: A subtrie is misplaced or has no key.
+
+    Returns:
+        The value of the longest match in this subtrie or its subtries.
+    """
+    _current = self._value if self._value is not None else _current
 
     if not key:
-      return current
+      return _current
 
     if self._buckets is None:
-      return current
+      return _current
     else:
       mapper = self._mapper
       buckets = self._buckets
@@ -138,10 +177,10 @@ class CompactTrie(PickleMixin):
       subtrie = buckets[index]
 
       if subtrie:
-        if not subtrie._key:
-          raise KeyError(f'Subtrie at {index} has no key')
+        prefix: Optional[Key] = subtrie._key
 
-        prefix: Key = subtrie._key
+        if not prefix:
+          raise KeyError(f'Subtrie at {index} has no key')
 
         len_prefix = len(prefix)
 
@@ -154,12 +193,12 @@ class CompactTrie(PickleMixin):
         # Prefix fully prefixes key
         elif uncommon_index == len_prefix:
           # Recursively get value in subtrie with rest of key
-          return subtrie.find_closest(key[len_prefix:], current)
+          return subtrie.find_closest(key[len_prefix:], _current)
         else:
-          return current
+          return _current
       # No matches
       else:
-        return current
+        return _current
 
 if __name__ == '__main__':
   from string import digits
