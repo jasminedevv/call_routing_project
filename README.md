@@ -7,13 +7,18 @@ To find a number: open it in VS Code, ctrl+C, add a comma to the end, then delet
 Load the carrier list into a dictionary. For a number we want to find, search the whole number and remove characters off the end (+ the trailing comma) until you find a match.
 
 # Scenario 3
+
 Search for the prefix in a radix trie and look up the end value in the carrier dictionary.
 
-## Generate a Pickled Trie
+## Requirements
 
-You'll likely need 16GB of RAM
+- Python 3
+- [These files](https://www.dropbox.com/sh/tj6ppp6uwf12cce/AADje96PJhfsIXJEtP1OjwjFa) a folder called "data"
+- 2 GB spare RAM (the 10M file is taxing)
 
-1. Download [route-costs-10000000.txt](https://www.dropbox.com/sh/tj6ppp6uwf12cce/AADje96PJhfsIXJEtP1OjwjFa?preview=route-costs-10000000.txt) into a folder called "data"
-2. Run `python pick_trie.py 10000000`
+## Running
 
-Your pickled Trie should be available at 10000000.trie
+1. Run `python trie_serializer.py dump 10000000`
+2. Run `python scenario3.py`
+
+Results will in a file called "out.txt"
