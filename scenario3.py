@@ -1,19 +1,29 @@
-from trie_serializer import load
+from trie_serializer import load, grow_and_dump
 from data_reader import numbers_gen
 
+NUM_ROUTES = '10000000'
+
 def main():
-  trie = load('10000000')
+  try:
+    trie = load(NUM_ROUTES)
+  except OSError:
+    print('Trie doesn\'t exist!')
 
-  print('Writing results to out.txt...')
+    trie = grow_and_dump(NUM_ROUTES)
 
-  with open('out.txt', 'wb') as f:
+  def get_price(number):
+    return trie.find_closest(number) or 0
+
+  print('Getting prices and writing to scenario3.out...')
+
+  with open('scenario3.out', 'w') as f:
     for number in numbers_gen('10000'):
-      f.write(number)
-      f.write(b', ')
-      f.write(bytes(str(trie.find_closest(number) or 0), 'utf-8'))
-      f.write(b'\n')
+      f.write(number.decode())
+      f.write(', ')
+      f.write(str(get_price(number)))
+      f.write('\n')
 
-  print('Finished!')
+  print('Done!')
 
 if __name__ == '__main__':
   main()

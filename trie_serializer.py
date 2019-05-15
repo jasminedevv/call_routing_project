@@ -34,9 +34,12 @@ def _grow_trie(number):
 
   return trie
 
-def _grow_dump(number):
+def grow_and_dump(number):
   trie = _grow_trie(number)
+
   dump(trie, number)
+
+  return trie
 
 def main():
   from sys import argv
@@ -48,7 +51,7 @@ def main():
   pool = Pool(5)
 
   if action == 'dump':
-    pool.map(_grow_dump, numbers)
+    pool.map(grow_and_dump, numbers)
   elif action == 'load':
     pool.map(load, numbers)
 
