@@ -36,8 +36,8 @@ class Trie(PickleMixin):
     self._value = _value
 
     if items is not None:
-      for key, _value in items:
-        self[key] = _value
+      for key, value in items:
+        self[key] = value
 
   def __setitem__(self, key: Key, value: Value) -> None:
     """Recursively sets the value of a key within the trie."""
