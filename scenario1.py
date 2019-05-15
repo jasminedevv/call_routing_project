@@ -1,7 +1,8 @@
 from data_reader import routes_gen, numbers_gen
+from utils import decode_route_prefix
 
 # Generate the routes sorted
-routes = list(((route.decode(), cost) for route, cost in routes_gen('106000')))
+routes = list(decode_route_prefix(routes_gen('106000')))
 routes.sort(key=lambda r: len(r[0]), reverse=True)
 
 def get_cost(number: str) -> float:

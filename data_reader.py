@@ -1,6 +1,9 @@
 from typing import Generator, Tuple
 
-def routes_gen(num) -> Generator[Tuple[bytes, float], None, None]:
+Route = Tuple[bytes, float]
+Number = bytes
+
+def routes_gen(num) -> Generator[Route, None, None]:
   """Produces routes and their costs from the file data/route-costs-{num}.txt.
 
   Args:
@@ -14,7 +17,7 @@ def routes_gen(num) -> Generator[Tuple[bytes, float], None, None]:
         prefix, cost = route[:-1].split(b',')
         yield (prefix, float(cost))
 
-def numbers_gen(num) -> Generator[bytes, None, None]:
+def numbers_gen(num) -> Generator[Number, None, None]:
   """Produces phone numbers from the file data/phone-numbers-{num}.txt.
 
   Args:

@@ -1,8 +1,9 @@
 from typing import Dict
 
 from data_reader import routes_gen, numbers_gen
+from utils import decode_route_prefix
 
-routes: Dict[str, float] = dict((route.decode(), cost) for route, cost in routes_gen('106000'))
+routes: Dict[str, float] = dict(decode_route_prefix(routes_gen('106000')))
 
 def get_price(number: str) -> float:
   while number:
