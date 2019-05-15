@@ -92,10 +92,10 @@ class Trie(PickleMixin):
 
 if __name__ == "__main__":
   from string import digits
-  trie = Trie(keys=bytes(digits, 'utf-8'))
+  trie = Trie(keys=digits)
 
-  trie[b'152'] = 1
-  trie[b'1526'] = 2
-  trie[b'1527'] = 3
+  trie['152'] = 1
+  trie['1526'] = 2
+  trie['1527'] = 3
 
-  assert trie.find_closest(b'15267') == 2
+  assert trie.find_closest('15267') == 2

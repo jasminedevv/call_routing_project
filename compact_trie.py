@@ -202,12 +202,10 @@ class CompactTrie(PickleMixin):
 
 if __name__ == '__main__':
   from string import digits
+  trie = CompactTrie(keys=digits)
 
-  PHONE_KEYS = bytes('+' + digits, 'utf-8')
-  trie = CompactTrie(keys=PHONE_KEYS)
+  trie['152'] = 1
+  trie['1526'] = 2
+  trie['1527'] = 3
 
-  trie[b'152'] = 1
-  trie[b'1526'] = 2
-  trie[b'1527'] = 3
-
-  assert trie.find_closest(b'15267') == 2
+  assert trie.find_closest('15267') == 2
