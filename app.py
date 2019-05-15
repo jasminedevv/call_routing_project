@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, jsonify
 
 from scenario3 import get_price
 
@@ -6,4 +6,7 @@ app = Flask(__name__)
 
 @app.route("/<number>", methods=["GET"])
 def root(number):
-  return str(get_price(bytes(number, 'utf-8')))
+  try:
+    return jsonify({'price': get_price(bytes(number, 'utf-8'))})
+  except KeyError:
+    return jsonify({'error': 'Invalid input'})
