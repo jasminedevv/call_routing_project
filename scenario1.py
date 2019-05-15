@@ -7,9 +7,9 @@ routes.sort(key=lambda r: len(r[0]), reverse=True)
 
 def get_cost(number: str) -> float:
   """Finds the price of a number by searching for the longest corresponding route."""
-  for route in routes:
-    if number.startswith(route[0]):
-      return route[1]
+  for prefix, cost in routes:
+    if number.startswith(prefix):
+      return cost
 
   return 0
 
