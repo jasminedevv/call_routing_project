@@ -1,13 +1,28 @@
 from typing import Generator, Tuple
 
 def routes_gen(num) -> Generator[Tuple[bytes, float], None, None]:
-  """Takes the carrier list file and returns a list of tuples: (prefix, cost)"""
+  """Produces routes and their costs from the file data/route-costs-{num}.txt.
+
+  Args:
+      num ([type]): [description]
+
+  Yields:
+      Tuples of routes and their costs
+  """
   with open(f'data/route-costs-{num}.txt', 'rb') as routes:
     for route in routes:
         prefix, cost = route[:-1].split(b',')
-        yield (prefix, float(cost)) # returns a bunch of values without loading the whole thing into memory
+        yield (prefix, float(cost))
 
 def numbers_gen(num) -> Generator[bytes, None, None]:
+  """Produces phone numbers from the file data/phone-numbers-{num}.txt.
+
+  Args:
+      num: The number in the file.
+
+  Yields:
+      A phone number in bytes.
+  """
   with open(f'data/phone-numbers-{num}.txt', 'rb') as numbers:
     for number in numbers:
       yield number[:-1]
