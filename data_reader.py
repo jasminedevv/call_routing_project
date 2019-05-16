@@ -1,7 +1,8 @@
 from typing import Generator, Tuple
 
-Route = Tuple[bytes, float]
 Number = bytes
+Cost = float
+Route = Tuple[Number, Cost]
 
 def routes_gen(num) -> Generator[Route, None, None]:
   """Produces routes and their costs from the file data/route-costs-{num}.txt.
