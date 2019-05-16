@@ -65,7 +65,7 @@ class CompactTrie(PickleMixin):
       for key, value in items:
         self[key] = value
 
-  def __setitem__(self, key: Key, value: Value) -> None:
+  def __setitem__(self, key: Optional[Key], value: Value) -> None:
     """Recursively sets the value of a key within the trie.
 
     Raises:
@@ -104,11 +104,14 @@ class CompactTrie(PickleMixin):
 
         # Not a prefix
         if uncommon_index == 0:
-          raise KeyError(f'Subtrie with key={key} misplaced at bucket {index}')
+          raise KeyError(f'Subtrie with key {key} misplaced at bucket {index}')
+        elif uncommon_index == len_prefix == len_key:
+          subtrie[None] = value
+          return
         # Prefix fully prefixes key
         elif uncommon_index == len_prefix:
           # Recursively set value in subtrie with rest of key
-          subtrie[key[len_prefix:]] = value
+          subtrie[key[uncommon_index:]] = value
           return
         # Key fully prefixes prefix
         elif uncommon_index == len_key:
